@@ -2,7 +2,7 @@
 
 A small **Java console application** designed to demonstrate **Clean Architecture**, **SOLID-informed design**, and clear separation of responsibilities in a simple library domain.
 
-Its main value is in the way the code is structured, how responsibilities are separated, and how business rules are placed within the application flow. The implementation is intentionally lightweight, using plain Java and in-memory storage to keep the focus on design.
+Its main value is in how the code is structured, how responsibilities are separated, and how business rules are placed within the application flow. The implementation is intentionally lightweight, using plain Java and in-memory storage to keep the focus on design.
 
 ## Why this project matters
 
@@ -10,13 +10,11 @@ This repository demonstrates software engineering design decisions more than fea
 
 It shows:
 
-- use-case driven design instead of putting logic in the user interface
-- separation of concerns across domain, workflow, adapter, and framework layers
+- use-case driven design instead of placing workflow logic in the user interface
+- separation of concerns across domain, application, adapter, and framework code
 - dependency inversion through a repository interface
 - explicit handling of business rules such as duplicate ISBN checks and borrow limits
-- a clear path for extension from a console prototype toward a more complete application
-
-The project demonstrates code organisation, separation of concerns, and deliberate placement of business rules within the application layer.
+- clear business-rule placement within the application layer
 
 ## Overview
 
@@ -37,53 +35,36 @@ The project also enforces several simple business rules:
 
 ## Technical highlights
 
-- Plain Java implementation with no external dependencies
+- plain Java implementation with no external dependencies
 - Clean Architecture folder structure using `entities`, `usecases`, `adapters`, `frameworks`, and `main`
-- Repository abstraction via `LibraryRepository`
-- In-memory storage through `InMemoryLibraryRepository`
+- repository abstraction via `LibraryRepository`
+- in-memory storage through `InMemoryLibraryRepository`
 - UUID-based identifiers with short-ID support in the console flow for easier input
-- Use-case classes that keep business logic out of the user interface
+- use-case classes that keep business logic out of the user interface
 
-## Architecture
+## High-Level Architecture
 
-The code follows a simplified **Clean Architecture** approach.
-
-### Mermaid diagram
+The application follows a small Clean Architecture style flow, with the controller coordinating use cases, use cases depending on a repository port, and infrastructure details kept at the boundary.
 
 ```mermaid
 flowchart LR
-    M[Main<br/>Composition Root] --> UI[ConsoleMenu<br/>Framework]
-    M --> CTRL[LibraryController<br/>Adapter]
-    M --> REPOIMPL[InMemoryLibraryRepository<br/>Framework]
+    Main["Main / Composition Root"] --> Menu["ConsoleMenu"]
+    Main --> Controller["LibraryController"]
+    Main --> RepoImpl["InMemoryLibraryRepository"]
 
-    UI --> CTRL
+    Menu --> Controller
 
-    CTRL --> UC1[AddBookUseCase]
-    CTRL --> UC2[RegisterMemberUseCase]
-    CTRL --> UC3[BorrowBookUseCase]
-    CTRL --> UC4[ReturnBookUseCase]
-    CTRL --> UC5[ListBooksUseCase]
+    Controller --> UseCases["Use Cases"]
+    UseCases --> RepoPort["LibraryRepository (Port)"]
+    RepoImpl -. implements .-> RepoPort
 
-    UC1 --> PORT[LibraryRepository<br/>Port]
-    UC2 --> PORT
-    UC3 --> PORT
-    UC4 --> PORT
-    UC5 --> PORT
-
-    REPOIMPL -. implements .-> PORT
-
-    UC1 --> B[Book]
-    UC2 --> MEM[Member]
-    UC3 --> B
-    UC3 --> BR[BorrowRecord]
-    UC4 --> B
-    UC4 --> BR
-    UC5 --> B
+    UseCases --> Entities["Entities: Book, Member, BorrowRecord"]
 ```
 
-### Layer responsibilities
+## Layer responsibilities
 
 **Entities**
+
 - `Book`
 - `Member`
 - `BorrowRecord`
@@ -91,6 +72,7 @@ flowchart LR
 These classes hold the core domain state and essential domain behaviour.
 
 **Use Cases**
+
 - `AddBookUseCase`
 - `RegisterMemberUseCase`
 - `BorrowBookUseCase`
@@ -101,17 +83,20 @@ These classes hold the core domain state and essential domain behaviour.
 These classes coordinate application behaviour and enforce business rules.
 
 **Adapters**
+
 - `LibraryController`
 
 This class translates menu actions into use-case calls and returns user-facing success or error messages.
 
 **Frameworks**
+
 - `ConsoleMenu`
 - `InMemoryLibraryRepository`
 
 These classes handle implementation details at the system boundary. The console menu manages input and output, while the repository implementation provides in-memory storage.
 
 **Composition Root**
+
 - `Main`
 
 This wires dependencies together and performs basic dependency injection.
@@ -152,7 +137,7 @@ That makes the behaviour easier to test, reason about, and reuse if the applicat
 
 The use cases depend on `LibraryRepository`, not directly on `InMemoryLibraryRepository`.
 
-That reduces coupling and makes it easier to replace the current storage approach with a file-based or database-backed implementation later.
+That reduces coupling and keeps the storage decision outside the application layer.
 
 ### 3. Let the domain model own simple state changes
 
@@ -174,13 +159,13 @@ That improves usability during manual demos and testing while preserving globall
 
 ## SOLID principles in practice
 
-The project also applies key SOLID principles at a small scale:
+The project applies key SOLID principles at a small scale:
 
-- **Single Responsibility Principle (SRP)**: entities, use cases, controller, repository, and menu each have a distinct concern
-- **Open/Closed Principle (OCP)**: workflows depend on `LibraryRepository`, which allows new repository implementations without rewriting use-case logic
-- **Liskov Substitution Principle (LSP)**: any repository implementation that honours the same contract should be usable by the workflows
-- **Interface Segregation Principle (ISP)**: the current interface is intentionally simple for the project scope, though it could be split further in a larger system
-- **Dependency Inversion Principle (DIP)**: high-level use cases depend on an abstraction and receive the concrete dependency through constructor injection in `Main`
+- **Single Responsibility Principle (SRP):** entities, use cases, controller, repository, and menu each have a distinct concern
+- **Open/Closed Principle (OCP):** workflows depend on `LibraryRepository`, which allows new repository implementations without rewriting use-case logic
+- **Liskov Substitution Principle (LSP):** any repository implementation that honours the same contract should be usable by the workflows
+- **Interface Segregation Principle (ISP):** the current interface is intentionally simple for the project scope, though it could be split further in a larger system
+- **Dependency Inversion Principle (DIP):** high-level use cases depend on an abstraction and receive the concrete dependency through constructor injection in `Main`
 
 ## Demonstrated business rules
 
@@ -208,6 +193,8 @@ This gives a simple end-to-end demonstration of how the architecture supports th
 
 ## How to compile and run
 
+Run these commands from the repository root.
+
 This project can be compiled directly using `javac`.
 
 ### Compile
@@ -222,6 +209,8 @@ javac -d out $(find src -name "*.java")
 java -cp out main.Main
 ```
 
+> Note: the compile command above is Unix-style and works in environments such as Git Bash, Linux, or WSL.
+
 ## What I learned
 
 This project reinforced several practical software engineering lessons for me:
@@ -231,7 +220,7 @@ This project reinforced several practical software engineering lessons for me:
 - **Interfaces make future change cheaper.** Using `LibraryRepository` gave me a cleaner seam between workflow code and storage code.
 - **Domain behaviour should stay close to the domain.** Letting `Book` manage its own quantity and status changes kept the code more coherent.
 - **Good architecture improves clarity.** The project became easier to explain and reason about because each layer had a clear role.
-- **Trade-offs are part of engineering.** In-memory storage was enough for the scope of the project, but the design still leaves room for persistence, testing, and interface changes later.
+- **Trade-offs are part of engineering.** In-memory storage was enough for the scope of the project while still leaving the design focused on structure and dependency control.
 
 ## Limitations
 
@@ -245,5 +234,4 @@ This is a deliberately small project, so some trade-offs were intentional:
 - one broad repository interface for simplicity
 - minimal operational concerns such as logging or configuration
 
-These limitations define the current scope of the project and highlight the most natural areas for future extension.
-
+These limitations define the current scope of the project.
